@@ -1,0 +1,48 @@
+create 'flight_info', 'cf'
+
+CREATE EXTERNAL TABLE hive_flight_info (
+    fno INT, 
+    fsource STRING, 
+    fdest STRING, 
+    fsh_at STRING, 
+    fsh_dt STRING, 
+    fsch_delay INT
+)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,cf:fsource,cf:fdest,cf:fsh_at,cf:fsh_dt,cf:fsch_delay")
+TBLPROPERTIES ("hbase.table.name" = "flight_info");
+
+
+put 'flight_info', '1', 'cf:fsource', 'DEL'
+put 'flight_info', '1', 'cf:fdest', 'BOM'
+put 'flight_info', '1', 'cf:fsh_at', '08:00'
+put 'flight_info', '1', 'cf:fsh_dt', '10:30'
+put 'flight_info', '1', 'cf:fsch_delay', '5'
+
+put 'flight_info', '2', 'cf:fsource', 'BLR'
+put 'flight_info', '2', 'cf:fdest', 'HYD'
+put 'flight_info', '2', 'cf:fsh_at', '12:30'
+put 'flight_info', '2', 'cf:fsh_dt', '14:00'
+put 'flight_info', '2', 'cf:fsch_delay', '10'
+
+
+scan 'flight_info'
+
+
+SELECT * FROM hive_flight_info;
+
+
+SELECT AVG(fsch_delay) FROM hive_flight_info;
+
+
+CREATE INDEX flight_delay_index 
+ON TABLE hive_flight_info (fsch_delay)
+AS 'COMPACT'
+WITH DEFERRED REBUILD;
+
+
+ALTER INDEX flight_delay_index ON hive_flight_info REBUILD;
+
+
+
+

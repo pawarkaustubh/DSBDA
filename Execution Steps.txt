@@ -1,0 +1,10 @@
+hadoop fs -put wordcountFile wordCountFile
+
+
+hadoop jar MRProgramsDemo.jar PackageDemo.WordCount wordCountFile MRDir1
+
+
+ hadoop fs -ls MRDir1
+
+hadoop fs -cat MRDir1/part-r-00000
+

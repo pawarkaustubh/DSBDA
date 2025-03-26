@@ -1,0 +1,66 @@
+package packageDemo1;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import java.io.IOException;
+import java.util.StringTokenizer;
+
+
+
+public class MaxConsumption {
+    
+    
+    public static class MaxConsumptionMapper extends Mapper<Object, Text, Text, IntWritable> {
+        public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+            String line = value.toString().trim();
+            StringTokenizer tokenizer = new StringTokenizer(line);
+            
+            if (tokenizer.hasMoreTokens()) {
+                // First token is the year
+            	String year = tokenizer.nextToken();
+                int maxConsumption = Integer.MIN_VALUE;
+                
+                // Remaining tokens are consumption values
+                while (tokenizer.hasMoreTokens()) {
+                    int consumption = Integer.parseInt(tokenizer.nextToken());
+                    maxConsumption = Math.max(maxConsumption, consumption);
+                }
+                context.write(new Text(year), new IntWritable(maxConsumption));
+            }
+        }
+    }
+
+    // Reducer Class
+    public static class MaxConsumptionReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+        public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+            int maxConsumption = Integer.MIN_VALUE;
+            for (IntWritable value : values) {
+                maxConsumption = Math.max(maxConsumption, value.get());
+            }
+
+            context.write(key, new IntWritable(maxConsumption));
+        }
+    }
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf, "Max Electricity Consumption");
+
+        job.setJarByClass(MaxConsumption.class);
+        job.setMapperClass(MaxConsumptionMapper.class);
+        job.setReducerClass(MaxConsumptionReducer.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
